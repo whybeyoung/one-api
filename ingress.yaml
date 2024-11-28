@@ -27,4 +27,25 @@ spec:
               number: 3000
         path: /v1
         pathType: Prefix
+    host: maas-api.cn-huabei-1.xf-yun.com
+  - http:
+      paths:
+      - backend:
+          service:
+            name: maas-one-api
+            port:
+              number: 3000
+        path: /v1
+        pathType: Prefix
     host: test-maas-api.cn-huabei-1.xf-yun.com
+
+  - http:
+      paths:
+      - backend:
+          service:
+            name: maas-one-api
+            port:
+              number: 3000
+        path: /
+        pathType: Prefix
+    host: maas-api-admin.iflyaicloud.com 
