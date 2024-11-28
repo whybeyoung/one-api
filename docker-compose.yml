@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   one-api:
-    image: "${REGISTRY:-docker.io}/justsong/one-api:latest"
+    image: "artifacts.iflytek.com/docker-private/maas/one-api:v3"
     container_name: one-api
     restart: always
     command: --log-dir /app/logs
@@ -11,30 +11,36 @@ services:
     volumes:
       - ./data/oneapi:/data
       - ./logs:/app/logs
+    network_mode: host
+    build:
+      context: .
+      dockerfile: Dockerfile
     environment:
-      - SQL_DSN=oneapi:123456@tcp(db:3306)/one-api  # 修改此行，或注释掉以使用 SQLite 作为数据库
+#      - SQL_DSN=oneapi:abc123456@tcp(db:3306)/one-api  # 修改此行，或注释掉以使用 SQLite 作为数据库
+      - SQL_DSN=u_maas_one_api:nHWLFSOLhUbFlVAa@tcp(t4meyfykqd6p.mysql.bj00.dbaas.private:24808)/maas_one_api
       - REDIS_CONN_STRING=redis://redis
-      - SESSION_SECRET=random_string  # 修改为随机字符串
+      - SESSION_SECRET=fdasfj321490-9o-09-09-423
       - TZ=Asia/Shanghai
 #      - NODE_TYPE=slave  # 多机部署时从节点取消注释该行
-#      - SYNC_FREQUENCY=60  # 需要定期从数据库加载数据时取消注释该行
+      #- GIN_MODE=debug
+      - SYNC_FREQUENCY=60  # 需要定期从数据库加载数据时取消注释该行
 #      - FRONTEND_BASE_URL=https://openai.justsong.cn  # 多机部署时从节点取消注释该行
     depends_on:
       - redis
       - db
     healthcheck:
-      test: [ "CMD-SHELL", "wget -q -O - http://localhost:3000/api/status | grep -o '\"success\":\\s*true' | awk -F: '{print $2}'" ]
+      test: [ "CMD-SHELL", "wget -q -O - http://localhost:3000/api/status | grep -o '\"success\":\\s*true' | awk -F: '{print $$2}'" ]
       interval: 30s
       timeout: 10s
       retries: 3
 
   redis:
-    image: "${REGISTRY:-docker.io}/redis:latest"
+    image: "artifacts.iflytek.com/docker-private/aiaas/redis:latest"
     container_name: redis
     restart: always
 
   db:
-    image: "${REGISTRY:-docker.io}/mysql:8.2.0"
+    image: "artifacts.iflytek.com/docker-private/maas/mysql:8.2.0"
     restart: always
     container_name: mysql
     volumes:
@@ -43,7 +49,7 @@ services:
       - '3306:3306'
     environment:
       TZ: Asia/Shanghai   # 设置时区
-      MYSQL_ROOT_PASSWORD: 'OneAPI@justsong' # 设置 root 用户的密码
+      MYSQL_ROOT_PASSWORD: 'xylx1.t!@#$' # 设置 root 用户的密码
       MYSQL_USER: oneapi   # 创建专用用户
-      MYSQL_PASSWORD: '123456'    # 设置专用用户密码
+      MYSQL_PASSWORD: 'abc123456'    # 设置专用用户密码
       MYSQL_DATABASE: one-api   # 自动创建数据库

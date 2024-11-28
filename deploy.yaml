@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: StatefulSet 
+metadata:
+  name: maas-one-api
+  labels:
+    app: maas-one-api
+spec:
+  replicas: 3  # 根据需要设置副本数
+  selector:
+    matchLabels:
+      app: maas-one-api
+  template:
+    metadata:
+      labels:
+        app: maas-one-api
+    spec:
+      initContainers:
+        - name: init-container
+          image: artifacts.iflytek.com/docker-private/maas/sync_tools:v1.0.0 
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # 使用 Pod 名称设置 NODE_TYPE 环境变量
+              if [[ "$(hostname)" == "maas-one-api-0" ]]; then
+                echo "NODE_TYPE=master" > /etc/podinfo/node_role
+              else
+                echo "NODE_TYPE=slave" > /etc/podinfo/node_role
+              fi
+          volumeMounts:
+            - name: podinfo
+              mountPath: /etc/podinfo  # 挂载到 Pod 信息路径
+      nodeSelector:
+          region: dx
+      tolerations:
+        - key: llmv3_26b
+          value: "true"
+          operator: Equal
+      #hostNetwork: true
+      dnsPolicy: Default
+      containers:
+        - name: maas-one-api
+          image: "artifacts.iflytek.com/docker-private/maas/one-api:v3"
+          command: 
+          - sh
+          - "/start.sh"
+          ports:
+            - containerPort: 3000
+          env:
+            - name: SQL_DSN
+              value: "u_maas_one_api:nHWLFSOLhUbFlVAa@tcp(t4meyfykqd6p.mysql.bj00.dbaas.private:24808)/maas_one_api"
+            - name: REDIS_CONN_STRING
+              value: "node-a.redis-bj02-39dpmh.svc.bjb.ipaas.cn:9000,node-b.redis-bj02-39dpmh.svc.bjb.ipaas.cn:9000,node-c.redis-bj02-39dpmh.svc.bjb.ipaas.cn:9000,node-d.redis-bj02-39dpmh.svc.bjb.ipaas.cn:9000,node-e.redis-bj02-39dpmh.svc.bjb.ipaas.cn:9000,node-f.redis-bj02-39dpmh.svc.bjb.ipaas.cn:9000"
+            - name: REDIS_PASSWORD
+              value: 10Kntjzzzx 
+
+            - name: SESSION_SECRET
+              value: "fdasfj321490-9o-09-09-423"
+            - name: TZ
+              value: "Asia/Shanghai"
+            - name: SYNC_FREQUENCY
+              value: "30"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name  
+          volumeMounts:
+            - name: oneapi-data
+              mountPath: /data
+            - name: oneapi-logs
+              mountPath: /app/logs
+            - name: podinfo
+              mountPath: /etc/podinfo  # 挂载初始化容器输出的路径
+          resources:
+            requests:
+              memory: "1Gi"
+            limits:
+              memory: "1Gi"
+      volumes:
+        - name: oneapi-data
+          hostPath:
+            path: /data1/maas-oneapi  # 挂载主机目录
+            type: DirectoryOrCreate
+        - name: oneapi-logs
+          hostPath:
+            path: /var/log/maas-oneapi-logs
+            type: DirectoryOrCreate
+        - name: podinfo  # 用于存储 INIT 容器的输出
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: maas-one-api
+spec:
+  selector:
+    app: maas-one-api
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: ClusterIP  # 你可以根据需求选择 ClusterIP、NodePort、LoadBalancer 等类型
+

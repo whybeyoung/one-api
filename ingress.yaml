@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: maas-one-api-ingress
+  namespace: default  # 或者你想要部署的命名空间
+  annotations:
+     nginx.org/upstream-zone-size: "0"
+spec:
+  ingressClassName: nginx 
+  rules:
+  - http:
+      paths:
+      - backend:
+          service:
+            name: maas-one-api 
+            port:
+              number: 3000 
+        path: /
+        pathType: Prefix
+    host: oneapi-admin.xf-yun.cn 
+  - http:
+      paths:
+      - backend:
+          service:
+            name: maas-one-api
+            port:
+              number: 3000
+        path: /v1
+        pathType: Prefix
+    host: test-maas-api.cn-huabei-1.xf-yun.com
