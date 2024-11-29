@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   one-api:
-    image: "artifacts.iflytek.com/docker-private/maas/one-api:v3"
+    image: "artifacts.iflytek.com/docker-private/maas/one-api:v4.2"
     container_name: one-api
     restart: always
     command: --log-dir /app/logs

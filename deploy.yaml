@@ -40,13 +40,15 @@ spec:
       dnsPolicy: Default
       containers:
         - name: maas-one-api
-          image: "artifacts.iflytek.com/docker-private/maas/one-api:v3"
+          image: "artifacts.iflytek.com/docker-private/maas/one-api:v4.2"
           command: 
           - sh
           - "/start.sh"
           ports:
             - containerPort: 3000
           env:
+            - name: ENFORCE_INCLUDE_USAGE
+              value: "true"
             - name: SQL_DSN
               value: "u_maas_one_api:nHWLFSOLhUbFlVAa@tcp(t4meyfykqd6p.mysql.bj00.dbaas.private:24808)/maas_one_api"
             - name: REDIS_CONN_STRING
