@@ -163,6 +163,7 @@ func StreamHandler(c *gin.Context, meta *meta.Meta, textRequest model.GeneralOpe
 	if err != nil {
 		return openai.ErrorWrapper(err, "xunfei_request_failed", http.StatusInternalServerError), nil
 	}
+
 	common.SetEventStreamHeaders(c)
 	var usage model.Usage
 	c.Stream(func(w io.Writer) bool {
@@ -171,6 +172,12 @@ func StreamHandler(c *gin.Context, meta *meta.Meta, textRequest model.GeneralOpe
 			usage.PromptTokens += xunfeiResponse.Payload.Usage.Text.PromptTokens
 			usage.CompletionTokens += xunfeiResponse.Payload.Usage.Text.CompletionTokens
 			usage.TotalTokens += xunfeiResponse.Payload.Usage.Text.TotalTokens
+			if xunfeiResponse.Header.Code != 0 {
+				errMessage := fmt.Sprintf("Xunfei request failed with Sid: %s code: %d, msg: %s", xunfeiResponse.Header.Sid, xunfeiResponse.Header.Code, xunfeiResponse.Header.Message)
+				logger.SysError(errMessage)
+				c.Render(-1, common.CustomEvent{Data: "data: [ERROR] " + errMessage})
+				return true // 停止流式响应
+			}
 			response := streamResponseXunfei2OpenAI(&xunfeiResponse, &usage)
 			jsonResponse, err := json.Marshal(response)
 			if err != nil {
@@ -211,7 +218,7 @@ func Handler(c *gin.Context, meta *meta.Meta, textRequest model.GeneralOpenAIReq
 		}
 	}
 	if xunfeiResponse.Header.Code != 0 {
-		return openai.ErrorWrapper(errors.New("xunfei response error: sid: "+xunfeiResponse.Header.Sid), strconv.Itoa(xunfeiResponse.Header.Code), http.StatusInternalServerError), nil
+		return openai.ErrorWrapper(errors.New("xunfei response error: sid: "+xunfeiResponse.Header.Sid+"msg: "+xunfeiResponse.Header.Message), strconv.Itoa(xunfeiResponse.Header.Code), http.StatusInternalServerError), nil
 
 	}
 	if len(xunfeiResponse.Payload.Choices.Text) == 0 {
